@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   THEME TOKENS (portado do dbx-genie-rx-main, adaptado para o chatbot)
+   ========================================================================== */
+
+:root {
+  /* Primary accent - Electric Indigo */
+  --color-accent: #4F46E5;
+  --color-accent-light: #818CF8;
+  --color-accent-glow: rgba(79, 70, 229, 0.4);
+
+  /* Secondary accent - Cyan */
+  --color-cyan: #06B6D4;
+  --color-cyan-light: #22D3EE;
+
+  /* Semantic colors (Light) */
+  --bg-primary: #FAFBFD;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F4F6FA;
+  --bg-sunken: #F1F5F9;
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #64748B;
+
+  --border-color: rgba(15, 23, 42, 0.08);
+  --border-color-strong: rgba(15, 23, 42, 0.12);
+  --shadow-color: rgba(15, 23, 42, 0.08);
+
+  --accent-current: var(--color-accent);
+  --accent-glow-current: var(--color-accent-glow);
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+.dark {
+  /* Semantic colors (Dark) */
+  --bg-primary: #0A0F1C;
+  --bg-surface: #111827;
+  --bg-elevated: #1E293B;
+  --bg-sunken: #0D1321;
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color-strong: rgba(255, 255, 255, 0.12);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+
+  --accent-current: var(--color-accent-light);
+  --accent-glow-current: rgba(129, 140, 248, 0.4);
+}
+
+/* ==========================================================================
+   BASE STYLES
+   ========================================================================== */
+
+html {
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  color-scheme: light;
+  scrollbar-color: var(--text-muted) var(--bg-elevated);
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  font-family: 'Figtree', sans-serif;
+  margin: 0;
+  padding: 0;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  overflow-y: auto;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Pattern / mesh (estilo dbx-genie-rx-main) */
+  background-image: radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.04) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.dark body {
+  background-image: none;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(129, 140, 248, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(34, 211, 238, 0.1) 0%, transparent 50%),
+    var(--bg-primary);
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* ==========================================================================
+   SCROLLBAR STYLING
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  position: absolute;
+  right: 0;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-elevated);
+  margin-right: 0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}

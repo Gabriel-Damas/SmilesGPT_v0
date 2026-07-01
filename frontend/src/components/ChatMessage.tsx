@@ -43,7 +43,8 @@ const MessageContainer = styled.div<{ isUser: boolean }>`
 
   animation: ${fadeInUp} 0.25s ease-out;
 
-  margin-bottom: ${p => (p.isUser ? '6px' : '3px')};
+  /* Ajuste de margem inferior para evitar sobreposição com a barra de pesquisa */
+  margin-bottom: ${p => (p.isUser ? '24px' : '32px')};
 `;
 
 /* =========================

@@ -6,8 +6,17 @@ import databricksText from '../assets/images/databricks_text.svg';
 import golSmilesLogo from '../assets/images/gol_smiles_logo.png';
 import { fetchUserInfo } from '../api/chatApi';
 
+const HeaderContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+`;
+
 const UserMenuContainer = styled.div`
   position: relative;
+  margin-left: auto;
+  padding-right: 16px;
 `;
 
 const Avatar = styled.button`
@@ -25,7 +34,7 @@ const Avatar = styled.button`
 `;
 
 const MenuDropdown = styled.div<{ isOpen: boolean }>`
-  display: ${props => props.isOpen ? 'flex' : 'none'};
+  display: ${props => (props.isOpen ? 'flex' : 'none')};
   position: absolute;
   top: 100%;
   right: 0;
@@ -68,7 +77,7 @@ const MenuItem = styled.button`
 const LogoContainer = styled.div`
   padding-left: 8px;
   height: 32px;
-  min-heigh:32px;
+  min-height: 32px;
   margin-top: 4px;
   display: flex;
   align-items: center;
@@ -98,7 +107,11 @@ const UserMenu: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { logout } = useChat();
-  const [userInfo, setUserInfo] = useState<{username: string, email: string, displayName: string} | null>(null);
+  const [userInfo, setUserInfo] = useState<{
+    username: string;
+    email: string;
+    displayName: string;
+  } | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -106,19 +119,24 @@ const UserMenu: React.FC = () => {
         setIsOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   useEffect(() => {
     const getUserInfo = async () => {
       try {
-        const userInfo = await fetchUserInfo();
-        setUserInfo(userInfo);
+        const info = await fetchUserInfo();
+        setUserInfo(info);
       } catch (error) {
         console.error('Failed to fetch user info:', error);
       }
     };
+
     getUserInfo();
   }, []);
 
@@ -128,35 +146,65 @@ const UserMenu: React.FC = () => {
     } catch (error) {
       console.error('Failed to logout:', error);
     }
+
     setIsOpen(false);
   };
 
-  if(!userInfo) {
+  if (!userInfo) {
     return null;
   }
 
   return (
-    <>
-     <LogoContainer data-testid="logo-container">
+    <HeaderContainer>
+      <LogoContainer data-testid="logo-container">
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <LogoIcon src={databricksLogo} alt="Databricks Logo" data-testid="logo-icon"/>
-          <LogoText src={databricksText} alt="Databricks" data-testid="logo-text"/>
+          <LogoIcon
+            src={databricksLogo}
+            alt="Databricks Logo"
+            data-testid="logo-icon"
+          />
+          <LogoText
+            src={databricksText}
+            alt="Databricks"
+            data-testid="logo-text"
+          />
         </div>
+
         <Separator />
-        <GolSmilesLogo src={golSmilesLogo} alt="GOL Smiles" data-testid="gol-smiles-logo"/>
+
+        <GolSmilesLogo
+          src={golSmilesLogo}
+          alt="GOL Smiles"
+          data-testid="gol-smiles-logo"
+        />
       </LogoContainer>
+
       <UserMenuContainer ref={menuRef}>
-        <Avatar onClick={() => setIsOpen(!isOpen)}>{userInfo.username.charAt(0).toUpperCase()}</Avatar>
+        <Avatar onClick={() => setIsOpen(!isOpen)}>
+          {userInfo.username.charAt(0).toUpperCase()}
+        </Avatar>
+
         <MenuDropdown isOpen={isOpen}>
           <UserInfo>
-            {userInfo.displayName}<br />
-            <span style={{fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginTop: '2px'}}>{userInfo.email}</span>
+            {userInfo.displayName}
+            <br />
+            <span
+              style={{
+                fontSize: '12px',
+                color: 'var(--text-muted)',
+                display: 'block',
+                marginTop: '2px',
+              }}
+            >
+              {userInfo.email}
+            </span>
           </UserInfo>
+
           <MenuItem onClick={handleLogout}>Sair</MenuItem>
         </MenuDropdown>
       </UserMenuContainer>
-    </>
+    </HeaderContainer>
   );
 };
 
-export default UserMenu; 
+export default UserMenu;

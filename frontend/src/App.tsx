@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { ChatProvider } from './context/ChatContext';
 import LeftComponent from './components/LeftComponent';
 import ChatArea from './components/ChatArea';
+import IntroPage from './components/IntroPage';
 import { useTheme } from './hooks/useTheme';
 
 // Define the props type explicitly
@@ -175,31 +176,60 @@ const ModalButtonSparkles = styled.span`
   font-size: 14px;
 `;
 
+const fadeInMain = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const MainWrapper = styled.div`
+  animation: ${fadeInMain} 0.6s ease-out;
+  width: 100%;
+  height: 100%;
+`;
+
 const App: React.FC = () => {
-  useTheme()
+  useTheme();
+  const [showIntro, setShowIntro] = useState(() => {
+    return !sessionStorage.getItem('chat_intro_seen_v1');
+  });
+  const [enteringChat, setEnteringChat] = useState(false);
   const [showNewsModal, setShowNewsModal] = useState(false);
 
-  useEffect(() => {
-    const STORAGE_KEY = 'chat_news_seen_v1';
-    const hasSeen = sessionStorage.getItem(STORAGE_KEY);
+  const handleEnterChat = () => {
+    sessionStorage.setItem('chat_intro_seen_v1', 'true');
+    setEnteringChat(true);
+    setTimeout(() => {
+      setShowIntro(false);
+    }, 400);
+  };
 
-    if (!hasSeen) {
-      setShowNewsModal(true);
-      sessionStorage.setItem(STORAGE_KEY, 'true');
+  useEffect(() => {
+    if (!showIntro) {
+      const hasSeen = sessionStorage.getItem('chat_news_seen_v1');
+      if (!hasSeen) {
+        setShowNewsModal(true);
+        sessionStorage.setItem('chat_news_seen_v1', 'true');
+      }
     }
-  }, []);
+  }, [showIntro]);
 
   const handleCloseModal = () => {
     setShowNewsModal(false);
   };
 
+  if (showIntro) {
+    return <IntroPage onEnter={handleEnterChat} />;
+  }
+
   return (
     <ChatProvider>
       <AppContainer data-testid="app-container">
-        <MainContent data-testid="main-content">
-          <LeftComponent />
-          <ChatArea />
-        </MainContent>
+        <MainWrapper>
+          <MainContent data-testid="main-content">
+            <LeftComponent />
+            <ChatArea />
+          </MainContent>
+        </MainWrapper>
 
         {showNewsModal && (
           <ModalOverlay>

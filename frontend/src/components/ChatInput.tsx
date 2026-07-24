@@ -360,7 +360,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             title="Anexar arquivo CSV ou XLSX"
             data-testid="attach-button"
           >
-            &#128206;
+            <FontAwesomeIcon icon={faPaperclip} />
           </AttachButton>
           <SendButton
             onClick={handleSubmit}

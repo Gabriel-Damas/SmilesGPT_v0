@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartLine, faPlaneDeparture, faLayerGroup, faCreditCard, faCrown } from '@fortawesome/free-solid-svg-icons';
+import { faChartLine } from '@fortawesome/free-solid-svg-icons';
 import databricksIcon from '../assets/images/databricks_icon.svg';
 
 interface IntroPageProps {
@@ -261,7 +261,7 @@ const IntroPage: React.FC<IntroPageProps> = ({ onEnter }) => {
         
         <FeaturesRow visible={visible}>
           <FeatureChip glowColor="#4F46E5">
-            <FeatureIcon>📊</FeatureIcon>
+            <FeatureIcon><FontAwesomeIcon icon={faChartLine} /></FeatureIcon>
             Acumulo
           </FeatureChip>
           <FeatureChip glowColor="#06B6D4">

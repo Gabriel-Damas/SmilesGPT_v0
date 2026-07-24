@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperclip } from '@fortawesome/free-solid-svg-icons';
+import { faPaperclip, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { useChat } from '../context/ChatContext';
-import { uploadFile, UploadedFileInfo } from '../api/chatApi';
+import { uploadFile, lookupCpf, UploadedFileInfo } from '../api/chatApi';
 import sendIconUrl from '../assets/images/send_icon.svg';
 
 interface InputContainerProps {
@@ -335,6 +335,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
           style={{ display: 'none' }}
           onChange={handleFileChange}
           data-testid="file-input"
+        />
+        {/* Input oculto para lookup CPF */}
+        <input
+          ref={lookupInputRef}
+          type="file"
+          accept=".csv,.xlsx,.xls"
+          style={{ display: 'none' }}
+          onChange={handleLookupCpf}
+          data-testid="lookup-input"
         />
 
         {!inputValue && (

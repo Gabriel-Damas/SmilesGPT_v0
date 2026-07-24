@@ -350,6 +350,26 @@ export const uploadFile = async (file: File): Promise<UploadedFileInfo> => {
   return response.json();
 };
 
+// ---------------------------------------------------------------------------
+// Lookup CPF -> Nr_Smiles (direto via SQL, sem LLM)
+// ---------------------------------------------------------------------------
+export const lookupCpf = async (file: File): Promise<Blob> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_URL}/lookup-cpf`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Erro no lookup: ${response.status}`);
+  }
+
+  return response.blob();
+};
+
 export interface ServingEndpoint {
   name: string;
   state: string;

@@ -199,6 +199,115 @@ async def upload_file(file: UploadFile = File(...)):
     }
 
 
+# ---------------------------------------------------------------------------
+# Lookup CPF -> Nr_Smiles direto via SQL (sem LLM)
+# Aceita CSV/XLSX, cruza com gold_prd.members.general e retorna CSV
+# ---------------------------------------------------------------------------
+SQL_WAREHOUSE_ID = "95e830c4d77e2443"
+
+@api_app.post("/lookup-cpf")
+async def lookup_cpf(
+    file: UploadFile = File(...),
+    token: str = Depends(get_token),
+):
+    """Recebe CSV/XLSX com CPFs, cruza com gold_prd.members.general e retorna CSV com nr_smiles."""
+    filename = file.filename or ""
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+    if ext not in ("csv", "xlsx", "xls"):
+        raise HTTPException(status_code=400, detail="Formato nao suportado. Envie .csv ou .xlsx.")
+
+    content = await file.read()
+    try:
+        if ext == "csv":
+            df = pd.read_csv(io.BytesIO(content), dtype=str)
+        else:
+            df = pd.read_excel(io.BytesIO(content), dtype=str)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Erro ao ler o arquivo: {e}")
+
+    # Identifica coluna de CPF (busca por nome que contenha 'cpf')
+    cpf_col = None
+    for col in df.columns:
+        if 'cpf' in col.lower():
+            cpf_col = col
+            break
+    if cpf_col is None:
+        # Tenta primeira coluna se nenhuma tiver 'cpf' no nome
+        cpf_col = df.columns[0]
+
+    # Limpa CPFs: remove pontos, tracos, espacos
+    cpfs_raw = df[cpf_col].dropna().astype(str).tolist()
+    cpfs_clean = [c.replace('.', '').replace('-', '').replace(' ', '').strip() for c in cpfs_raw]
+    cpfs_clean = [c for c in cpfs_clean if c and c.isdigit()]
+
+    if not cpfs_clean:
+        raise HTTPException(status_code=400, detail="Nenhum CPF valido encontrado no arquivo.")
+
+    logger.info(f"Lookup CPF: {len(cpfs_clean)} CPFs validos de {len(cpfs_raw)} linhas")
+
+    # Executa query em batches de 1000 (limite pratico do IN clause)
+    all_results = []
+    batch_size = 1000
+    headers_auth = {"Authorization": f"Bearer {token}"}
+
+    for i in range(0, len(cpfs_clean), batch_size):
+        batch = cpfs_clean[i:i + batch_size]
+        cpf_list_sql = ", ".join(f"'{cpf}'" for cpf in batch)
+        query = f"SELECT nr_cpf, nr_smiles FROM gold_prd.members.general WHERE nr_cpf IN ({cpf_list_sql})"
+
+        # Usa Statement Execution API
+        stmt_url = f"{DATABRICKS_HOST}/api/2.0/sql/statements"
+        payload = {
+            "warehouse_id": SQL_WAREHOUSE_ID,
+            "statement": query,
+            "wait_timeout": "120s",
+            "disposition": "INLINE",
+            "format": "JSON_ARRAY",
+        }
+
+        async with httpx.AsyncClient(timeout=180.0) as client:
+            resp = await client.post(stmt_url, json=payload, headers=headers_auth)
+
+        if resp.status_code != 200:
+            logger.error(f"SQL Statement API error: {resp.status_code} - {resp.text}")
+            raise HTTPException(status_code=502, detail=f"Erro ao consultar banco: {resp.text}")
+
+        result = resp.json()
+        status = result.get("status", {}).get("state")
+
+        if status == "FAILED":
+            error_msg = result.get("status", {}).get("error", {}).get("message", "Erro desconhecido")
+            raise HTTPException(status_code=502, detail=f"Erro SQL: {error_msg}")
+
+        # Extrai dados do resultado
+        data_chunk = result.get("result", {}).get("data_array", [])
+        all_results.extend(data_chunk)
+
+    logger.info(f"Lookup CPF: {len(all_results)} matches encontrados")
+
+    # Monta DataFrame de resultado e faz merge com o original
+    df_result = pd.DataFrame(all_results, columns=["nr_cpf", "nr_smiles"])
+
+    # Adiciona coluna de CPF limpo ao df original para merge
+    df["_cpf_limpo"] = df[cpf_col].fillna('').astype(str).apply(
+        lambda x: x.replace('.', '').replace('-', '').replace(' ', '').strip()
+    )
+    df_merged = df.merge(df_result, left_on="_cpf_limpo", right_on="nr_cpf", how="left")
+    df_merged.drop(columns=["_cpf_limpo", "nr_cpf"], inplace=True, errors='ignore')
+
+    # Retorna CSV
+    csv_buffer = io.StringIO()
+    df_merged.to_csv(csv_buffer, index=False)
+    csv_bytes = csv_buffer.getvalue().encode("utf-8")
+
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=resultado_smiles_{len(df_merged)}_linhas.csv"}
+    )
+
+
 # Modify the chat endpoint to handle sessions
 @api_app.post("/chat")
 async def chat(

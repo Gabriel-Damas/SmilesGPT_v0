@@ -8,7 +8,7 @@ interface ChatContextType {
   chats: Chat[];
   messages: Message[];
   loading: boolean;
-  sendMessage: (content: string, includeHistory: boolean) => Promise<void>;
+  sendMessage: (content: string, includeHistory: boolean, displayContent?: string) => Promise<void>;
   selectChat: (chatId: string) => Promise<void>;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;

@@ -261,7 +261,7 @@ async def lookup_cpf(
         payload = {
             "warehouse_id": SQL_WAREHOUSE_ID,
             "statement": query,
-            "wait_timeout": "120s",
+            "wait_timeout": "50s",
             "disposition": "INLINE",
             "format": "JSON_ARRAY",
             "row_limit": 10000,

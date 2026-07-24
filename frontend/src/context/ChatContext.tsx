@@ -63,7 +63,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [chats]);
 
-  const sendMessage = async (content: string, includeHistory: boolean = true) => {
+  const sendMessage = async (content: string, includeHistory: boolean = true, displayContent?: string) => {
     if (!content.trim()) return;
 
     // Create new session if needed
@@ -73,7 +73,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
     const userMessage: Message = { 
       message_id: uuid(),
-      content, 
+      content: displayContent || content, 
       role: 'user',
       timestamp: new Date()
     };

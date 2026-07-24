@@ -284,11 +284,17 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const hasContent = inputValue.trim() || uploadedFile;
     if (!hasContent || loading || isUploading) return;
 
-    const value = buildMessageWithFile(inputValue);
+    // Contexto completo para o LLM (com preview)
+    const apiContent = buildMessageWithFile(inputValue);
+    // Display limpo para o usuario (so nome do arquivo)
+    const displayContent = uploadedFile
+      ? `\uD83D\uDCCE ${uploadedFile.filename}${inputValue.trim() ? '\n\n' + inputValue.trim() : ''}`
+      : inputValue;
+
     setInputValue('');
     setUploadedFile(null);
 
-    await sendMessage(value, includeHistory);
+    await sendMessage(apiContent, includeHistory, displayContent);
 
     if (textareaRef.current) {
       textareaRef.current.style.height = '50px';

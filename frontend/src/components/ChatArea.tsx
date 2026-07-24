@@ -109,14 +109,67 @@ const MessagesContainer = styled.div`
   max-width: 100%;
 `;
 
+/* ================= SCROLL TO TOP ================= */
+
+const fadeInScale = keyframes`
+  from { opacity: 0; transform: translateY(10px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+`;
+
+const fadeOutScale = keyframes`
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(10px) scale(0.9); }
+`;
+
+const ScrollToTopButton = styled.button<{ visible: boolean }>`
+  position: absolute;
+  top: calc(50% - 20px);
+  right: -52px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color-strong);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  z-index: 30;
+  animation: ${({ visible }) => visible ? fadeInScale : fadeOutScale} 0.25s ease forwards;
+  pointer-events: ${({ visible }) => visible ? 'auto' : 'none'};
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    background: var(--bg-elevated);
+    box-shadow: 0 6px 20px var(--shadow-color);
+  }
+`;
+
 /* ================= COMPONENTE ================= */
 
 const ChatArea: React.FC = () => {
   const { messages, isSidebarOpen } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContentRef = useRef<HTMLDivElement>(null);
 
   const [hasStartedChat, setHasStartedChat] = useState(false);
   const [includeHistory, setIncludeHistory] = useState(true);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const container = chatContentRef.current;
+    if (!container) return;
+    const onScroll = () => setShowScrollTop(container.scrollTop > 10);
+    container.addEventListener('scroll', onScroll);
+    return () => container.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    chatContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const [animateWelcomeOut, setAnimateWelcomeOut] = useState(false);
   const [animateWelcomeIn, setAnimateWelcomeIn] = useState(true);
@@ -168,7 +221,7 @@ const ChatArea: React.FC = () => {
     <ChatContainer data-testid="chat-area" sidebarOpen={isSidebarOpen}>
       <ChatTopNav />
 
-      <ChatContent data-testid="chat-content">
+      <ChatContent ref={chatContentRef} data-testid="chat-content">
 
         {showWelcome && (
           <WelcomeContainer
@@ -210,12 +263,16 @@ const ChatArea: React.FC = () => {
       </ChatContent>
 
       <FixedInputWrapper visible={hasMessages} data-testid="fixed-input-wrapper">
+        <ScrollToTopButton visible={showScrollTop} onClick={scrollToTop} aria-label="Voltar ao topo">
+          ↑
+        </ScrollToTopButton>
         <ChatInput 
           fixed={true} 
           includeHistory={includeHistory}
           setIncludeHistory={setIncludeHistory}
         />
       </FixedInputWrapper>
+
     </ChatContainer>
   );
 };

@@ -6,6 +6,18 @@ command:
   - "--worker-class"
   - "uvicorn.workers.UvicornWorker"
 
+resources:
+  - name: "serving-endpoint"
+    serving_endpoint:
+      name: "mas-b652e4f4-endpoint"
+      permission: "CAN_QUERY"
+  - name: "catalogo-completo"
+    genie_space:
+      space_id: "01f186bd33491d25b212d8c9ec9503c4"
+      permission: "CAN_RUN"
+
 env:
   - name: "SERVING_ENDPOINT_NAME"
     valueFrom: "serving-endpoint"
+  - name: "GENIE_SPACE_ID"
+    valueFrom: "catalogo-completo"

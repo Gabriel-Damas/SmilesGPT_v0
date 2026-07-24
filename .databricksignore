@@ -1,0 +1,22 @@
+# Ignorar dependências de desenvolvimento (não necessárias no runtime)
+frontend/node_modules/
+node_modules/
+
+# Ignorar arquivos de build source map (já incluídos no build final)
+frontend/src/
+frontend/public/
+
+# Git internals
+.git/
+
+# Caches e logs
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.log
+
+# Ambientes virtuais
+.venv/
+venv/
+env/

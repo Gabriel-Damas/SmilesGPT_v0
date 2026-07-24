@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Response, Request, Query, Header, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks, Response, Request, Query, Header, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse, RedirectResponse
@@ -14,10 +14,12 @@ import httpx
 import time  
 import logging
 import asyncio
+import io
+import pandas as pd
 from chat_database import ChatDatabase
 from collections import defaultdict
 from contextlib import asynccontextmanager
-from models import MessageRequest, MessageResponse, ChatHistoryItem, ChatHistoryResponse, CreateChatRequest, RegenerateRequest
+from models import MessageRequest, MessageResponse, ChatHistoryItem, ChatHistoryResponse, CreateChatRequest, RegenerateRequest, GenieRequest
 from utils.config import SERVING_ENDPOINT_NAME, DATABRICKS_HOST
 from utils import *
 from utils.data_utils import get_service_token, _is_databricks_apps_env
@@ -90,6 +92,111 @@ async def get_auth_headers_sp() -> dict:
 @api_app.get("/")
 async def root():
     return {"message": "Databricks Chat API is running"}
+
+
+# ---------------------------------------------------------------------------
+# Genie endpoint — chama o Genie Space diretamente (sem passar pelo agente)
+# Mais rapido pois elimina o overhead do orquestrador LLM.
+# ---------------------------------------------------------------------------
+@api_app.post("/genie")
+async def genie_chat(
+    message: GenieRequest,
+    user_info: dict = Depends(get_user_info),
+    message_handler: MessageHandler = Depends(get_message_handler),
+    chat_db: ChatDatabase = Depends(get_chat_db),
+):
+    logger.info(f"Genie endpoint chamado — session: {message.session_id}")
+    user_id = user_info["user_id"]
+    space_id = message.space_id or GENIE_SPACE_ID
+
+    if not space_id:
+        raise HTTPException(status_code=400, detail="GENIE_SPACE_ID nao configurado.")
+
+    async def generate():
+        try:
+            yield f"data: {json.dumps({'type': 'status', 'thinkingStatus': 'Consultando dados no Genie...'})}\n\n"
+
+            response_text, sql_query, conv_id = await call_genie(
+                space_id=space_id,
+                question=message.content,
+                conversation_id=message.conversation_id,
+            )
+
+            assistant_message = message_handler.create_message(
+                message_id=str(uuid.uuid4()),
+                content=response_text,
+                role="assistant",
+                session_id=message.session_id,
+                user_id=user_id,
+                user_info=user_info,
+                is_first_message=chat_db.is_first_message(message.session_id, user_id),
+            )
+
+            payload = assistant_message.model_dump()
+            # Devolve o conversation_id para o frontend usar em follow-ups
+            if conv_id:
+                payload["conversation_id"] = conv_id
+            if sql_query:
+                payload["sql_query"] = sql_query
+
+            yield f"data: {json.dumps(payload)}\n\n"
+            yield "event: done\ndata: [DONE]\n\n"
+
+        except Exception as e:
+            logger.error(f"Erro no /genie: {e}", exc_info=True)
+            yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
+            yield "event: done\ndata: [DONE]\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Upload de arquivo CSV / XLSX — retorna prévia em markdown para o chat
+# ---------------------------------------------------------------------------
+@api_app.post("/upload-file")
+async def upload_file(file: UploadFile = File(...)):
+    filename = file.filename or ""
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+    if ext not in ("csv", "xlsx", "xls"):
+        raise HTTPException(status_code=400, detail="Formato não suportado. Envie um arquivo .csv ou .xlsx.")
+
+    content = await file.read()
+
+    try:
+        if ext == "csv":
+            df = pd.read_csv(io.BytesIO(content))
+        else:
+            df = pd.read_excel(io.BytesIO(content))
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Erro ao ler o arquivo: {e}")
+
+    rows, cols = df.shape
+    preview_rows = min(10, rows)
+    try:
+        preview_md = df.head(preview_rows).to_markdown(index=False)
+    except Exception:
+        preview_md = df.head(preview_rows).to_string(index=False)
+
+    col_types = ", ".join(f"{c} ({t})" for c, t in df.dtypes.items())
+
+    return {
+        "filename": filename,
+        "rows": rows,
+        "cols": cols,
+        "columns": list(df.columns),
+        "col_types": col_types,
+        "preview_markdown": preview_md,
+        "summary": (
+            f"Arquivo '{filename}': {rows} linhas × {cols} colunas.\n"
+            f"Colunas: {', '.join(df.columns.tolist())}"
+        ),
+    }
+
 
 # Modify the chat endpoint to handle sessions
 @api_app.post("/chat")

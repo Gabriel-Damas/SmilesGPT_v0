@@ -39,3 +39,9 @@ class RegenerateRequest(BaseModel):
     session_id: str 
     include_history: bool = True
     serving_endpoint_name: Optional[str] = None
+
+class GenieRequest(BaseModel):
+    content: str
+    session_id: str
+    space_id: Optional[str] = None          # sobrescreve GENIE_SPACE_ID se informado
+    conversation_id: Optional[str] = None   # para follow-ups na mesma conversa

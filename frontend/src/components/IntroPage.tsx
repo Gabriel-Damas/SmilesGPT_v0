@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled, { keyframes, css } from 'styled-components';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChartLine, faPlaneDeparture, faLayerGroup, faCreditCard, faCrown } from '@fortawesome/free-solid-svg-icons';
+import databricksIcon from '../assets/images/databricks_icon.svg';
 
 interface IntroPageProps {
   onEnter: () => void;
@@ -102,19 +105,18 @@ const LogoCircle = styled.div`
   width: 100px;
   height: 100px;
   border-radius: 24px;
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-cyan) 100%);
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 20px 60px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 20px 60px rgba(14, 87, 196, 0.35);
   animation: ${pulse} 2.5s ease-in-out infinite;
 `;
 
-const LogoText = styled.span`
-  font-size: 36px;
-  font-weight: 700;
-  color: white;
-  font-family: 'Figtree', sans-serif;
+const LogoImg = styled.img`
+  width: 52px;
+  height: 52px;
+  filter: brightness(0) invert(1);
 `;
 
 const Title = styled.h1<{ visible: boolean }>`
@@ -159,7 +161,7 @@ const FeaturesRow = styled.div<{ visible: boolean }>`
   transition: opacity 0.8s ease 0.6s, transform 0.8s ease 0.6s;
 `;
 
-const FeatureChip = styled.div`
+const FeatureChip = styled.div<{ glowColor?: string }>`
   display: flex;
   align-items: center;
   gap: 8px;
@@ -171,11 +173,13 @@ const FeatureChip = styled.div`
   font-weight: 500;
   color: var(--text-secondary);
   font-family: 'Figtree', sans-serif;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px var(--shadow-color);
+    transform: translateY(-3px) scale(1.05);
+    border-color: ${({ glowColor }) => glowColor || 'var(--color-accent)'};
+    box-shadow: 0 6px 20px ${({ glowColor }) => glowColor ? glowColor + '40' : 'rgba(79, 70, 229, 0.25)'};
+    background: ${({ glowColor }) => glowColor ? glowColor + '10' : 'rgba(79, 70, 229, 0.05)'};
   }
 `;
 
@@ -243,12 +247,12 @@ const IntroPage: React.FC<IntroPageProps> = ({ onEnter }) => {
       <Content>
         <LogoWrapper visible={visible}>
           <LogoCircle>
-            <LogoText>S</LogoText>
+            <LogoImg src={databricksIcon} alt="Databricks" />
           </LogoCircle>
         </LogoWrapper>
         
         <Title visible={visible}>
-          Smiles Insight Hub
+          SmilesGPT
         </Title>
         
         <Subtitle visible={visible}>
@@ -256,23 +260,23 @@ const IntroPage: React.FC<IntroPageProps> = ({ onEnter }) => {
         </Subtitle>
         
         <FeaturesRow visible={visible}>
-          <FeatureChip>
+          <FeatureChip glowColor="#4F46E5">
             <FeatureIcon>📊</FeatureIcon>
             Acumulo
           </FeatureChip>
-          <FeatureChip>
+          <FeatureChip glowColor="#06B6D4">
             <FeatureIcon>✈️</FeatureIcon>
             Resgates
           </FeatureChip>
-          <FeatureChip>
+          <FeatureChip glowColor="#F59E0B">
             <FeatureIcon>⭐</FeatureIcon>
             Tier
           </FeatureChip>
-          <FeatureChip>
+          <FeatureChip glowColor="#10B981">
             <FeatureIcon>💳</FeatureIcon>
             Cobranded
           </FeatureChip>
-          <FeatureChip>
+          <FeatureChip glowColor="#8B5CF6">
             <FeatureIcon>🏆</FeatureIcon>
             Clube
           </FeatureChip>

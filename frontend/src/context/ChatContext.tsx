@@ -277,7 +277,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       error,
       clearError,
       currentEndpoint,
-      setCurrentEndpoint: handleSetCurrentEndpoint
+      setCurrentEndpoint: handleSetCurrentEndpoint,
     }}>
       {children}
     </ChatContext.Provider>

@@ -320,6 +320,36 @@ export const logout = async () => {
   window.location.href = `${API_URL}/logout`;
 };
 
+// ---------------------------------------------------------------------------
+// Upload de arquivo CSV / XLSX
+// ---------------------------------------------------------------------------
+export interface UploadedFileInfo {
+  filename: string;
+  rows: number;
+  cols: number;
+  columns: string[];
+  col_types: string;
+  preview_markdown: string;
+  summary: string;
+}
+
+export const uploadFile = async (file: File): Promise<UploadedFileInfo> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_URL}/upload-file`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Erro no upload: ${response.status}`);
+  }
+
+  return response.json();
+};
+
 export interface ServingEndpoint {
   name: string;
   state: string;

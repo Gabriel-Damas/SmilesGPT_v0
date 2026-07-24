@@ -229,6 +229,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lookupInputRef = useRef<HTMLInputElement>(null);
+  const [isLookingUp, setIsLookingUp] = useState(false);
 
   useEffect(() => {
     if (textareaRef.current) {

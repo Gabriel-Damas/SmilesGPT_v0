@@ -176,8 +176,8 @@ async def upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=422, detail=f"Erro ao ler o arquivo: {e}")
 
     rows, cols = df.shape
-    # Envia ate 3000 linhas como contexto para o agente
-    preview_rows = min(3000, rows)
+    # Limite de linhas enviadas como contexto ao agente (acima de ~500 pode estourar tokens do modelo)
+    preview_rows = min(500, rows)
     try:
         preview_md = df.head(preview_rows).to_markdown(index=False)
     except Exception:

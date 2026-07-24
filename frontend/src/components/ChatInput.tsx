@@ -229,8 +229,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const lookupInputRef = useRef<HTMLInputElement>(null);
-  const [isLookingUp, setIsLookingUp] = useState(false);
+
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -285,18 +284,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const hasContent = inputValue.trim() || uploadedFile;
     if (!hasContent || loading || isUploading) return;
 
-    // Contexto completo para o LLM (com preview dos dados)
-    const apiContent = buildMessageWithFile(inputValue);
-    // Display limpo para o usuario (so nome + tipo do arquivo)
-    const ext = uploadedFile?.filename.split('.').pop()?.toUpperCase() || '';
-    const displayContent = uploadedFile
-      ? `\uD83D\uDCCE ${uploadedFile.filename}${inputValue.trim() ? '\n\n' + inputValue.trim() : ''}`
-      : inputValue;
-
+    const value = buildMessageWithFile(inputValue);
     setInputValue('');
     setUploadedFile(null);
 
-    await sendMessage(apiContent, includeHistory, displayContent);
+    await sendMessage(value, includeHistory);
 
     if (textareaRef.current) {
       textareaRef.current.style.height = '50px';

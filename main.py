@@ -246,9 +246,9 @@ async def lookup_cpf(
 
     logger.info(f"Lookup CPF: {len(cpfs_clean)} CPFs validos de {len(cpfs_raw)} linhas")
 
-    # Executa query em batches de 1000 (limite pratico do IN clause)
+    # Executa query em batches de 500 CPFs (evita IN clause muito grande)
     all_results = []
-    batch_size = 1000
+    batch_size = 500
     headers_auth = {"Authorization": f"Bearer {token}"}
 
     for i in range(0, len(cpfs_clean), batch_size):
@@ -264,6 +264,7 @@ async def lookup_cpf(
             "wait_timeout": "120s",
             "disposition": "INLINE",
             "format": "JSON_ARRAY",
+            "row_limit": 10000,
         }
 
         async with httpx.AsyncClient(timeout=180.0) as client:
@@ -280,9 +281,23 @@ async def lookup_cpf(
             error_msg = result.get("status", {}).get("error", {}).get("message", "Erro desconhecido")
             raise HTTPException(status_code=502, detail=f"Erro SQL: {error_msg}")
 
-        # Extrai dados do resultado
+        # Extrai dados do resultado (pode ter chunks paginados)
         data_chunk = result.get("result", {}).get("data_array", [])
         all_results.extend(data_chunk)
+
+        # Busca chunks adicionais se houver paginacao
+        statement_id = result.get("statement_id")
+        next_chunk = result.get("result", {}).get("next_chunk_index")
+        while next_chunk is not None and statement_id:
+            chunk_url = f"{DATABRICKS_HOST}/api/2.0/sql/statements/{statement_id}/result/chunks/{next_chunk}"
+            async with httpx.AsyncClient(timeout=180.0) as client:
+                chunk_resp = await client.get(chunk_url, headers=headers_auth)
+            if chunk_resp.status_code != 200:
+                break
+            chunk_data = chunk_resp.json()
+            data_chunk = chunk_data.get("data_array", [])
+            all_results.extend(data_chunk)
+            next_chunk = chunk_data.get("next_chunk_index")
 
     logger.info(f"Lookup CPF: {len(all_results)} matches encontrados")
 

@@ -251,6 +251,25 @@ const ChatInput: React.FC<ChatInputProps> = ({
     try {
       const info = await uploadFile(file);
       setUploadedFile(info);
+
+      // Auto-lookup: se tem coluna CPF e > 100 linhas, gera CSV com nr_smiles
+      const hasCpfCol = info.columns.some((col: string) => col.toLowerCase().includes('cpf'));
+      if (hasCpfCol && info.rows > 100) {
+        try {
+          const blob = await lookupCpf(file);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `resultado_smiles_${file.name.replace(/\.[^.]+$/, '')}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          setUploadedFile(null);
+        } catch (lookupErr: any) {
+          setUploadError(`Lookup automatico falhou: ${lookupErr.message}`);
+        }
+      }
     } catch (err: any) {
       setUploadError(err.message || 'Erro ao enviar o arquivo.');
     } finally {
@@ -284,17 +303,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
     const hasContent = inputValue.trim() || uploadedFile;
     if (!hasContent || loading || isUploading) return;
 
-    // Contexto completo para o LLM (com preview)
-    const apiContent = buildMessageWithFile(inputValue);
-    // Display limpo para o usuario (so nome do arquivo)
-    const displayContent = uploadedFile
-      ? `\uD83D\uDCCE ${uploadedFile.filename}${inputValue.trim() ? '\n\n' + inputValue.trim() : ''}`
-      : inputValue;
-
+    const value = buildMessageWithFile(inputValue);
     setInputValue('');
     setUploadedFile(null);
 
-    await sendMessage(apiContent, includeHistory, displayContent);
+    await sendMessage(value, includeHistory);
 
     if (textareaRef.current) {
       textareaRef.current.style.height = '50px';

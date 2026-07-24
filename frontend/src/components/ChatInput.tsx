@@ -337,15 +337,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           onChange={handleFileChange}
           data-testid="file-input"
         />
-        {/* Input oculto para lookup CPF */}
-        <input
-          ref={lookupInputRef}
-          type="file"
-          accept=".csv,.xlsx,.xls"
-          style={{ display: 'none' }}
-          onChange={handleLookupCpf}
-          data-testid="lookup-input"
-        />
+
 
         {!inputValue && (
           <TypingPlaceholder>
